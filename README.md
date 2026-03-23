@@ -1,143 +1,182 @@
-# Hotel-Management-System
-Hotel Management System is a software solution that manages hotel operations such as room booking, check-in and check-out, billing, housekeeping, and reports. It improves efficiency, reduces errors, and enhances guest experience through automation and real-time data management for better decision making and smooth daily hotel administration.
-import java.sql.*;
-import java.util.Scanner;
+# 🏥 Hospital Management System
 
-public class HotelReservationSystem {
+A Spring Boot + JPA + Lombok + JSP web application with **role-based access control** for Admin and Receptionist.
 
-    static final String URL = "jdbc:mysql://localhost:3306/hotel_db";
-    static final String USER = "root";
-    static final String PASSWORD = "Suditya@122";
+---
 
-    public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
+## 🧱 Tech Stack
 
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            Connection con = DriverManager.getConnection(URL, USER, PASSWORD);
-            System.out.println("Connected to Hotel DB");
+| Layer        | Technology                     |
+|--------------|-------------------------------|
+| Backend      | Spring Boot 3.2, Spring MVC   |
+| Security     | Spring Security (BCrypt)      |
+| Persistence  | Spring Data JPA + Hibernate   |
+| Database     | MySQL 8                       |
+| View Layer   | JSP + JSTL                    |
+| Boilerplate  | Lombok                        |
+| Build Tool   | Maven                         |
 
-            while (true) {
-                System.out.println("\nHOTEL RESERVATION SYSTEM");
-                System.out.println("1. Retrieve Guest Info");
-                System.out.println("2. Allocate Room");
-                System.out.println("3. Get Room Info");
-                System.out.println("4. Checkout");
-                System.out.println("5. Exit");
-                System.out.print("Enter choice: ");
-                int choice = sc.nextInt();
-                sc.nextLine();
+---
 
-                switch (choice) {
-                    case 1:
-                        retrieveGuestInfo(con, sc);
-                        break;
-                    case 2:
-                        allocateRoom(con, sc);
-                        break;
-                    case 3:
-                        getRoomInfo(con, sc);
-                        break;
-                    case 4:
-                        checkout(con, sc);
-                        break;
-                    case 5:
-                        System.out.println("Exiting...");
-                        con.close();
-                        sc.close();
-                        System.exit(0);
-                    default:
-                        System.out.println("Invalid choice!");
-                }
-            }
+## 👥 Roles & Permissions
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+| Feature              | Admin | Receptionist |
+|----------------------|:-----:|:------------:|
+| Manage Doctors       | ✅    | 👁 View only |
+| Manage Patients      | ✅    | 👁 View only |
+| Schedule Appointments| ❌    | ✅           |
+| Edit Appointments    | ❌    | ✅           |
+| Cancel Appointments  | ❌    | ✅           |
+| Admin Dashboard      | ✅    | ❌           |
+| Receptionist Dashboard| ❌   | ✅           |
 
-    static void retrieveGuestInfo(Connection con, Scanner sc) throws SQLException {
-        System.out.print("Enter Guest ID: ");
-        int guestId = sc.nextInt();
-        sc.nextLine();
-        String query = "SELECT * FROM reservations WHERE guest_id=?";
-        PreparedStatement ps = con.prepareStatement(query);
-        ps.setInt(1, guestId);
-        ResultSet rs = ps.executeQuery();
+---
 
-        if(rs.next()) {
-            System.out.println("Reservation ID: " + rs.getInt("reservation_id"));
-            System.out.println("Guest Name: " + rs.getString("guest_name"));
-            System.out.println("Contact: " + rs.getString("contact_number"));
-            System.out.println("Room No: " + rs.getInt("room_number"));
-            System.out.println("Check-in: " + rs.getTimestamp("check_in"));
-            System.out.println("Check-out: " + rs.getTimestamp("check_out"));
-        } else {
-            System.out.println("Guest not found.");
-        }
-    }
+## ⚙️ Prerequisites
 
-    static void allocateRoom(Connection con, Scanner sc) throws SQLException {
-        System.out.print("Enter Guest ID: ");
-        int guestId = sc.nextInt();
-        sc.nextLine();
-        System.out.print("Enter Guest Name: ");
-        String name = sc.nextLine();
-        System.out.print("Enter Contact Number: ");
-        String contact = sc.nextLine();
-        System.out.print("Enter Room Number: ");
-        int room = sc.nextInt();
+- Java 17+
+- Maven 3.8+
+- MySQL 8.x running locally
 
-        String query = "INSERT INTO reservations (guest_id, guest_name, contact_number, room_number) VALUES (?, ?, ?, ?)";
-        PreparedStatement ps = con.prepareStatement(query);
-        ps.setInt(1, guestId);
-        ps.setString(2, name);
-        ps.setString(3, contact);
-        ps.setInt(4, room);
+---
 
-        int inserted = ps.executeUpdate();
-        if(inserted > 0) System.out.println("Room allocated successfully!");
-        else System.out.println("Failed to allocate room.");
-    }
+## 🚀 Setup & Run
 
-    static void getRoomInfo(Connection con, Scanner sc) throws SQLException {
-        System.out.print("Enter Room Number: ");
-        int room = sc.nextInt();
-        String query = "SELECT * FROM reservations WHERE room_number=? AND check_out IS NULL";
-        PreparedStatement ps = con.prepareStatement(query);
-        ps.setInt(1, room);
-        ResultSet rs = ps.executeQuery();
+### 1. Create MySQL Database
 
-        if(rs.next()) {
-            System.out.println("Guest ID: " + rs.getInt("guest_id"));
-            System.out.println("Guest Name: " + rs.getString("guest_name"));
-            System.out.println("Check-in: " + rs.getTimestamp("check_in"));
-        } else {
-            System.out.println("Room is empty or checked out.");
-        }
-    }
+```sql
+CREATE DATABASE hospital_db;
+```
 
-    static void checkout(Connection con, Scanner sc) throws SQLException {
-        System.out.print("Enter Reservation ID: ");
-        int resId = sc.nextInt();
-        String query = "UPDATE reservations SET check_out=NOW() WHERE reservation_id=?";
-        PreparedStatement ps = con.prepareStatement(query);
-        ps.setInt(1, resId);
-        int updated = ps.executeUpdate();
-        if(updated > 0) System.out.println("Checkout successful!");
-        else System.out.println("Reservation not found.");
-    }
-}
-CREATE DATABASE hotel_db;
+### 2. Configure Database Credentials
 
-USE hotel_db;
+Edit `src/main/resources/application.properties`:
 
-CREATE TABLE reservations (
-    reservation_id INT PRIMARY KEY AUTO_INCREMENT,
-    guest_id INT NOT NULL,
-    guest_name VARCHAR(100),
-    contact_number VARCHAR(20),
-    room_number INT,
-    check_in DATETIME DEFAULT CURRENT_TIMESTAMP,
-    check_out DATETIME
-);
+```properties
+spring.datasource.url=jdbc:mysql://localhost:3306/hospital_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+spring.datasource.username=root
+spring.datasource.password=your_password
+```
+
+### 3. Build & Run
+
+```bash
+mvn clean spring-boot:run
+```
+
+### 4. Open in Browser
+
+```
+http://localhost:8080
+```
+
+---
+
+## 🔐 Default Login Credentials
+
+| Role          | Username       | Password   |
+|---------------|----------------|------------|
+| Admin         | `admin`        | `admin123` |
+| Receptionist  | `receptionist` | `recep123` |
+
+> Credentials are **auto-created** on first startup via `DataInitializer`.
+
+---
+
+## 📁 Project Structure
+
+```
+HospitalMS/
+├── src/main/java/com/hospital/
+│   ├── HospitalApplication.java         ← Entry point
+│   ├── config/
+│   │   └── SecurityConfig.java          ← Spring Security rules
+│   ├── model/
+│   │   ├── User.java
+│   │   ├── Doctor.java
+│   │   ├── Patient.java
+│   │   └── Appointment.java
+│   ├── repository/
+│   │   ├── UserRepository.java
+│   │   ├── DoctorRepository.java
+│   │   ├── PatientRepository.java
+│   │   └── AppointmentRepository.java
+│   ├── service/
+│   │   ├── CustomUserDetailsService.java
+│   │   ├── DoctorService.java
+│   │   ├── PatientService.java
+│   │   ├── AppointmentService.java
+│   │   └── DataInitializer.java
+│   └── controller/
+│       ├── AuthController.java
+│       ├── AdminController.java
+│       └── ReceptionistController.java
+├── src/main/webapp/WEB-INF/
+│   ├── web.xml
+│   └── views/
+│       ├── login.jsp
+│       ├── layout/
+│       │   ├── header.jsp
+│       │   └── footer.jsp
+│       ├── admin/
+│       │   ├── dashboard.jsp
+│       │   ├── doctors.jsp
+│       │   ├── doctorForm.jsp
+│       │   ├── doctorView.jsp
+│       │   ├── patients.jsp
+│       │   ├── patientForm.jsp
+│       │   └── patientView.jsp
+│       └── receptionist/
+│           ├── dashboard.jsp
+│           ├── appointments.jsp
+│           ├── appointmentForm.jsp
+│           ├── doctors.jsp
+│           └── patients.jsp
+└── src/main/resources/
+    └── application.properties
+```
+
+---
+
+## 🌐 URL Routes
+
+### Admin
+| Method | URL                          | Action              |
+|--------|------------------------------|---------------------|
+| GET    | `/admin/dashboard`           | Dashboard           |
+| GET    | `/admin/doctors`             | List doctors        |
+| GET    | `/admin/doctors/add`         | Add doctor form     |
+| POST   | `/admin/doctors/save`        | Save doctor         |
+| GET    | `/admin/doctors/edit/{id}`   | Edit doctor form    |
+| GET    | `/admin/doctors/delete/{id}` | Delete doctor       |
+| GET    | `/admin/patients`            | List patients       |
+| GET    | `/admin/patients/add`        | Add patient form    |
+| POST   | `/admin/patients/save`       | Save patient        |
+| GET    | `/admin/patients/edit/{id}`  | Edit patient form   |
+| GET    | `/admin/patients/delete/{id}`| Delete patient      |
+
+### Receptionist
+| Method | URL                                          | Action               |
+|--------|----------------------------------------------|----------------------|
+| GET    | `/receptionist/dashboard`                    | Dashboard            |
+| GET    | `/receptionist/appointments`                 | List appointments    |
+| GET    | `/receptionist/appointments/add`             | New appointment form |
+| POST   | `/receptionist/appointments/save`            | Save appointment     |
+| GET    | `/receptionist/appointments/edit/{id}`       | Edit appointment     |
+| GET    | `/receptionist/appointments/delete/{id}`     | Delete appointment   |
+| GET    | `/receptionist/appointments/status/{id}/{s}` | Update status        |
+| GET    | `/receptionist/doctors`                      | View doctors         |
+| GET    | `/receptionist/patients`                     | View patients        |
+
+---
+
+## 📸 Features
+
+- 🔐 Secure login with BCrypt password hashing
+- 🏠 Role-based redirect after login (Admin → Admin dashboard, Receptionist → Receptionist dashboard)
+- 👨‍⚕️ Full CRUD for Doctors (Admin only)
+- 🧑‍🤝‍🧑 Full CRUD for Patients (Admin only)
+- 📅 Appointment scheduling with status management (Receptionist)
+- 🔍 Search functionality for doctors and patients
+- 📊 Dashboard with live statistics
+- 🎨 Dark-themed responsive UI built with CSS
